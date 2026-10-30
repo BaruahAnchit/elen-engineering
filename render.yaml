@@ -1,0 +1,15 @@
+# Render Blueprint: one web service that builds the React client and serves it from Express.
+services:
+  - type: web
+    name: elen-careers
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: FIREBASE_DATABASE_URL
+        sync: false

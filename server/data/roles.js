@@ -1,0 +1,51 @@
+// Illustrative role profiles for the careers page (not confirmed vacancies).
+module.exports = [
+  {
+    title: "Electrical Design Engineer",
+    dept: "Engineering",
+    level: "Experienced",
+    location: "Guwahati, Assam",
+    skills: "Transformer design, electrical drawings, calculations",
+    desc: "Support electrical design activities, technical documentation and coordination with production and quality teams.",
+  },
+  {
+    title: "Graduate Engineer Trainee",
+    dept: "Engineering",
+    level: "Entry level",
+    location: "Guwahati, Assam",
+    skills: "Electrical engineering, learning agility, teamwork",
+    desc: "Learn engineering processes, product fundamentals, documentation and cross-functional coordination.",
+  },
+  {
+    title: "Production Technician",
+    dept: "Manufacturing",
+    level: "Entry level",
+    location: "Guwahati, Assam",
+    skills: "Assembly, tools, safety, attention to detail",
+    desc: "Assist with production activities while following work instructions, quality checks and safety practices.",
+  },
+  {
+    title: "Quality Assurance Engineer",
+    dept: "Quality",
+    level: "Experienced",
+    location: "Guwahati, Assam",
+    skills: "Inspection, testing, documentation, root-cause analysis",
+    desc: "Support quality inspections, test documentation, non-conformance analysis and continuous improvement.",
+  },
+  {
+    title: "Technical Sales Executive",
+    dept: "Sales",
+    level: "Experienced",
+    location: "Other locations",
+    skills: "Customer communication, product knowledge, coordination",
+    desc: "Understand customer requirements and coordinate technical and commercial information with internal teams.",
+  },
+  {
+    title: "HR & Administration Executive",
+    dept: "Human Resources",
+    level: "Entry level",
+    location: "Guwahati, Assam",
+    skills: "Communication, coordination, records, employee support",
+    desc: "Support recruitment coordination, onboarding documentation, employee records and day-to-day administration.",
+  },
+];

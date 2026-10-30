@@ -1,84 +1,74 @@
-# ELEN Engineering Careers (React + TypeScript + Firebase)
+# Elen Engineering – Careers page
 
-Vite + React 18 + TypeScript front end, Firebase Realtime Database / Auth / Storage, and a
-Cloud Function that emails every application to a recruiter address set **on the server**.
-
-## How "Apply" works
+React (Vite + TypeScript) client served by an Express server. One Render web service hosts both.
 
 ```
-Apply button -> form dialog -> anonymous sign-in -> CV uploaded to Storage (cvs/{uid}/...)
-             -> record written to /applications/{id}
-             -> Cloud Function onApplicationCreated -> email to HR_EMAIL (Reply-To = candidate)
+client/   React app (Vite). Page sections are components in src/components.
+server/   Express 5. GET /api (health), GET /api/roles (job data), serves client/dist in production.
+render.yaml   Render Blueprint
 ```
 
-* The recipient (`HR_EMAIL`) and SMTP credentials live only in Functions config. Nothing about
-  them is in `src/` or in the built site.
-* The email contains the candidate's details and a **signed CV link valid for 7 days** (the CV is not attached).
-* Visitors can create an application but never read, edit or delete one (see `database.rules.json`, `storage.rules`).
-
-## 1. One-time Firebase setup
-
-1. Upgrade the project to the **Blaze** plan (needed for Functions and Storage; check current pricing, set a budget alert).
-2. Build > **Realtime Database** > create it. The region is permanent. For an India audience pick `asia-southeast1`
-   and keep `REGION` in `functions/src/index.ts` equal to it.
-3. Build > **Storage** > get started.
-4. Build > **Authentication** > Sign-in method > enable **Anonymous**.
-5. Project settings > Your apps > add a **Web app**, then copy its config into `.env` (see `.env.example`).
-6. (Recommended) **App Check** > register the web app with reCAPTCHA v3, put the site key in `VITE_RECAPTCHA_SITE_KEY`,
-   then enforce it for Realtime Database and Storage.
-
-## 2. Configure the email
+## Run locally
 
 ```bash
-cp functions/.env.example functions/.env.elen-engineering-career-page   # edit HR_EMAIL, SMTP_HOST, SMTP_USER, MAIL_FROM
-firebase functions:secrets:set SMTP_PASS
+npm --prefix server install
+npm --prefix client install
+
+npm run dev:server   # terminal 1 -> http://localhost:8080
+npm run dev:client   # terminal 2 -> http://localhost:5173 (proxies /api to :8080)
 ```
 
-Any SMTP provider works (Brevo, SendGrid, Resend, SES, Google Workspace relay). `MAIL_FROM` must be a sender
-your provider has verified. Set `SEND_AUTOREPLY=true` to also acknowledge the candidate.
-
-## 3. Run and deploy
+Production-style check (what Render runs):
 
 ```bash
-npm install && npm --prefix functions install
-cp .env.example .env            # fill in the Firebase web config
-npm run dev                     # http://localhost:5173
-
-firebase deploy --only database,storage,functions,hosting
+npm run build && PORT=10000 npm start   # http://localhost:10000
 ```
 
-Optional: seed the six sample roles into `/jobs`
-(`GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json FIREBASE_DATABASE_URL=... npm run seed`).
-HR then edits roles in the Firebase console. Until `/jobs` has active roles (or if it is unreachable)
-the page falls back to the bundled sample roles in `src/data/sampleRoles.json`.
+## Deploy to Render
 
-Admin access (to read applications / edit jobs) is a custom claim, set once from a trusted script:
-`await getAuth().setCustomUserClaims(uid, { admin: true })`.
+1. Push this folder to a GitHub/GitLab repo (`node_modules` and `dist` are git-ignored).
+2. Render dashboard -> **New -> Blueprint** -> select the repo. Render reads `render.yaml`.
+3. Apply. Build runs `npm run build`, start runs `npm start`, health check is `/api`.
 
-## Local testing with the Emulator Suite
+Manual alternative (New -> Web Service): Runtime `Node`, Build Command `npm run build`,
+Start Command `npm start`, Health Check Path `/api`, env var `NODE_VERSION=22`.
 
-Set `VITE_USE_EMULATORS=true`, run `npm --prefix functions run build && firebase emulators:start`, and point
-`SMTP_HOST`/`SMTP_PORT` at a catch-all test inbox (e.g. Mailpit on `localhost:1025`).
+### Environment variables (all optional)
 
-## Things to know
+| Variable      | Purpose |
+|---------------|---------|
+| `HR_EMAIL`    | Recruitment address used by "Prepare application email". If unset, the page asks the visitor to type one (original prototype behaviour). |
+| `FIREBASE_*`  | See the Firebase section below. |
+| `CORS_ORIGIN` | Comma-separated extra origins allowed to call `/api` (only needed if a front end is hosted elsewhere, e.g. Firebase Hosting). |
 
-* `firebase.json` now serves **`dist/`** (the Vite build output) instead of `public/`. If you already have a
-  `firebase.json`, merge: keep your `auth` provider block and take the `hosting.public`, `storage`, `functions` and `emulators` entries.
-* If the function logs a `signBlob` / permission error when creating the CV link, grant its runtime service account the
-  **Service Account Token Creator** role on itself.
-* Node 22 is set in `functions/package.json`; use whatever runtime Firebase supports when you deploy.
-* Initial JS is ~113 kB gzipped; Auth and Storage load only when someone submits the form.
+## Roles from Firebase Realtime Database (optional)
 
-## Not built yet (from the spec)
+Without `FIREBASE_DATABASE_URL` the server uses `server/data/roles.js`. With it, `/api/roles` reads from Realtime Database
+(cached 60 s; if Firebase is unreachable it serves the last good copy, else `roles.js`).
 
-Contact form, scheduled retention/cleanup job, and the HR admin page. The privacy notice link is a placeholder:
-set `VITE_PRIVACY_URL` once the company has approved one.
+**Option A - REST (simplest, no secret key).** Job listings are public, so allow public *read* on `/roles` only:
 
-## Layout
-
+```json
+{ "rules": { ".read": false, ".write": false, "roles": { ".read": true } } }
 ```
-src/            React app (components/, lib/firebase.ts, lib/jobs.ts, lib/applications.ts, lib/validation.ts)
-functions/      Cloud Function (TypeScript) that sends the email
-public/images/  images that used to be base64 inside index.html
-database.rules.json, storage.rules, firebase.json, .firebaserc
-```
+
+1. Realtime Database -> Rules -> paste the above -> Publish.
+2. Realtime Database -> Data -> menu (three dots) -> **Import JSON** -> choose `server/data/roles.import.json`.
+3. Set `FIREBASE_DATABASE_URL` (e.g. `https://<project>-default-rtdb.<region>.firebasedatabase.app`) in Render -> Environment.
+
+**Option B - Admin SDK (database fully locked).** Keep rules at `".read": false, ".write": false`, then additionally set
+`FIREBASE_SERVICE_ACCOUNT` to the entire contents of a private-key JSON (Project settings -> Service accounts -> Generate new
+private key). The server then bypasses rules, and `cd server && npm run seed` can load the roles for you.
+Never commit that key file. Note the web-app `firebaseConfig` snippet is *not* this key.
+
+Optional: `ROLES_PATH` (default `roles`), `ROLES_CACHE_SECONDS` (default `60`).
+
+Data shape: `/roles/<any-key>` -> `{ title, dept, level, location, skills, desc, active }`. All string fields are required;
+set `active: false` to hide a role. Edits in the Firebase console appear on the site within a minute.
+`dept`, `level` and `location` should match the dropdown values in `client/src/constants.ts`, otherwise filters won't match.
+
+## Editing content
+
+- Roles: `server/data/roles.js`
+- Page copy/sections: `client/src/components/`
+- Styles: `client/src/index.css`
