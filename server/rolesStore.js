@@ -11,14 +11,22 @@ const FIELDS = ["title", "dept", "level", "location", "skills", "desc"];
 let db = null;
 function getDb() {
   if (db) return db;
-  const { FIREBASE_SERVICE_ACCOUNT, FIREBASE_DATABASE_URL } = process.env;
-  if (!FIREBASE_SERVICE_ACCOUNT || !FIREBASE_DATABASE_URL) return null;
+  const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_DATABASE_URL } = process.env;
+  if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY || !FIREBASE_DATABASE_URL) return null;
+  
   const { initializeApp, getApps, cert } = require("firebase-admin/app");
   const { getDatabase } = require("firebase-admin/database");
+  
   const app = getApps()[0] || initializeApp({
-    credential: cert(JSON.parse(FIREBASE_SERVICE_ACCOUNT)),
+    credential: cert({
+      projectId: FIREBASE_PROJECT_ID,
+      clientEmail: FIREBASE_CLIENT_EMAIL,
+      // Automatically fixes newlines whether they are escaped or literal!
+      privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
     databaseURL: FIREBASE_DATABASE_URL,
   });
+  
   db = getDatabase(app);
   return db;
 }
@@ -44,7 +52,11 @@ function normalize(value) {
 let cache = { at: 0, roles: null };
 
 async function getRoles() {
-  if (!process.env.FIREBASE_DATABASE_URL) return localRoles;
+  console.log(process.env.FIREBASE_DATABASE_URL);
+  if (!process.env.FIREBASE_DATABASE_URL) {
+    console.log("returning local");
+    return localRoles;
+  }
   if (cache.roles && Date.now() - cache.at < CACHE_MS) return cache.roles;
   try {
     cache = { at: Date.now(), roles: normalize(await readRaw()) };
