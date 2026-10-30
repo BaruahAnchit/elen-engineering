@@ -9,7 +9,21 @@ export interface Role {
 
 export interface RolesResponse {
   roles: Role[]
-  applyEmail: string | null
+}
+
+export interface ApplicationForm {
+  name: string
+  email: string
+  phone: string
+  message: string
+  cvUrl: string
+  consent: boolean
+  website: string // honeypot: must stay empty
+}
+
+export interface ApplicationResult {
+  ok: true
+  emailQueued: boolean
 }
 
 export interface JobFilters {

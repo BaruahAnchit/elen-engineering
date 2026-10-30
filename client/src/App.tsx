@@ -11,7 +11,7 @@ import { About, BenefitStrip, Cta, Faq, Footer, Growth, HowToApply, Life, Reward
 const NO_FILTERS: JobFilters = { q: '', dept: '', level: '', location: '' }
 
 export default function App() {
-  const { roles, applyEmail, status, retry } = useRoles()
+  const { roles, status, retry } = useRoles()
   const [filters, setFilters] = useState<JobFilters>(NO_FILTERS)
   const [selected, setSelected] = useState<Role | null>(null)
   const closeModal = useCallback(() => setSelected(null), [])
@@ -45,7 +45,7 @@ export default function App() {
         <Cta />
       </main>
       <Footer />
-      <RoleModal role={selected} applyEmail={applyEmail} onClose={closeModal} />
+      <RoleModal role={selected} onClose={closeModal} />
     </>
   )
 }

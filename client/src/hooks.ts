@@ -4,7 +4,6 @@ import type { Role } from './types'
 
 export function useRoles() {
   const [roles, setRoles] = useState<Role[]>([])
-  const [applyEmail, setApplyEmail] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [attempt, setAttempt] = useState(0)
 
@@ -14,7 +13,6 @@ export function useRoles() {
       .then((data) => {
         if (cancelled) return
         setRoles(data.roles)
-        setApplyEmail(data.applyEmail)
         setStatus('ready')
       })
       .catch(() => {
@@ -30,5 +28,5 @@ export function useRoles() {
     setAttempt((n) => n + 1)
   }, [])
 
-  return { roles, applyEmail, status, retry }
+  return { roles, status, retry }
 }

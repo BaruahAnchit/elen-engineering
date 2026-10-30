@@ -129,3 +129,19 @@ footer{background:#061f38;color:#d8e5ef;padding:25px 0;font-size:12px}
 .steps{grid-template-columns:1fr}
 .stats{grid-template-columns:1fr}
 .job-controls input,.job-controls select{width:100%}}
+
+/* Apply form */
+.modal-box{max-height:92vh;overflow-y:auto}
+.apply-form{display:grid;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.apply-form h3{margin:0}
+.apply-form label{display:grid;gap:5px;font-size:13px;font-weight:700;color:var(--ink)}
+.apply-form input:not([type=checkbox]),.apply-form textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid #d4dfe9;border-radius:8px;background:#fff;font:inherit;font-weight:400}
+.apply-form textarea{min-height:96px;resize:vertical}
+.apply-form .check{display:flex;gap:9px;align-items:flex-start;font-weight:400}
+.apply-form .check input{width:auto;min-width:0;padding:0;margin-top:3px}
+.apply-form .err{color:#b3261e;font-size:12px;font-weight:400}
+.apply-form .form-error{margin:0;padding:10px 12px;border-radius:8px;background:#fdecea;color:#b3261e;font-size:13px}
+.apply-form .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.apply-form .btn:disabled{opacity:.6;cursor:not-allowed}
+.apply-done{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.apply-done h3{margin:0 0 8px;color:var(--blue)}

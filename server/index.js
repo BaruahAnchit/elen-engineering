@@ -3,6 +3,7 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { getRoles } = require("./rolesStore");
+const applications = require("./applications");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -21,6 +22,7 @@ const allowedOrigins = [
 ];
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1); // Render sits behind a proxy; needed for per-IP rate limiting
 
 // ---- API ----
 app.use("/api", cors({ origin: allowedOrigins }));
@@ -30,11 +32,20 @@ app.get("/api", (req, res) => {
 });
 
 app.get("/api/roles", async (req, res) => {
-  res.json({ roles: await getRoles(), applyEmail: process.env.HR_EMAIL || null });
+  res.json({ roles: await getRoles() });
 });
+
+app.use("/api/applications", applications);
 
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Not found" });
+});
+
+// JSON errors for the API (bad/oversized JSON bodies etc.)
+app.use("/api", (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = err.status >= 400 && err.status < 500 ? err.status : 500;
+  res.status(status).json({ error: status === 500 ? "Server error." : "Invalid request." });
 });
 
 // ---- React build (production) ----

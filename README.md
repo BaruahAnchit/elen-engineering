@@ -4,7 +4,7 @@ React (Vite + TypeScript) client served by an Express server. One Render web ser
 
 ```
 client/   React app (Vite). Page sections are components in src/components.
-server/   Express 5. GET /api (health), GET /api/roles (job data), serves client/dist in production.
+server/   Express 5. GET /api (health), GET /api/roles, POST /api/applications, serves client/dist in production.
 render.yaml   Render Blueprint
 ```
 
@@ -37,7 +37,6 @@ Start Command `npm start`, Health Check Path `/api`, env var `NODE_VERSION=22`.
 
 | Variable      | Purpose |
 |---------------|---------|
-| `HR_EMAIL`    | Recruitment address used by "Prepare application email". If unset, the page asks the visitor to type one (original prototype behaviour). |
 | `FIREBASE_*`  | See the Firebase section below. |
 | `CORS_ORIGIN` | Comma-separated extra origins allowed to call `/api` (only needed if a front end is hosted elsewhere, e.g. Firebase Hosting). |
 
@@ -66,6 +65,28 @@ Optional: `ROLES_PATH` (default `roles`), `ROLES_CACHE_SECONDS` (default `60`).
 Data shape: `/roles/<any-key>` -> `{ title, dept, level, location, skills, desc, active }`. All string fields are required;
 set `active: false` to hide a role. Edits in the Firebase console appear on the site within a minute.
 `dept`, `level` and `location` should match the dropdown values in `client/src/constants.ts`, otherwise filters won't match.
+
+## Application form (saves to Firebase + emails a confirmation)
+
+`POST /api/applications` validates the form, saves it to Realtime Database at `/applications/<sha1(email|role)>`
+(so one application per email per role; repeats get a 409), then emails the applicant a confirmation.
+The email is sent in the background: the application is saved even if the email fails, and the record's `emailStatus`
+becomes `sent`, `failed` (with `emailError`) or `not_configured`. Review applications in Firebase console -> Realtime Database -> Data -> `applications`.
+
+Required env vars: `FIREBASE_DATABASE_URL` and `FIREBASE_SERVICE_ACCOUNT` (writes need the Admin SDK), plus for email:
+
+| Variable             | Purpose |
+|----------------------|---------|
+| `GMAIL_USER`         | The Gmail address that sends the confirmations. |
+| `GMAIL_APP_PASSWORD` | A Google **App Password** (needs 2-Step Verification: Google Account -> Security -> App passwords). Not your normal password. |
+| `MAIL_FROM_NAME`     | Optional sender name (default `Elen Engineering Careers`). |
+
+**Render free tier blocks outbound SMTP (ports 465/587), so Gmail emails will time out there** (applications are still saved).
+Email works locally and on a paid Render instance. To keep the free tier, swap `server/mailer.js` for an HTTPS email API
+(Resend, Brevo, ...); nothing else needs to change.
+
+Keep your database rules private (`".read": false` at the root) so `/applications` is never publicly readable. It contains personal data.
+Abuse protection: honeypot field, 10 requests per IP per 15 minutes, 20 KB body limit, role must exist.
 
 ## Editing content
 
